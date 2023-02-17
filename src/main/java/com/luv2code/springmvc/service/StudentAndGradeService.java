@@ -32,7 +32,7 @@ import java.util.Optional;
         }
     }
 
-    public   Iterable<CollegeStudent>getGradeBook(){
+    public Iterable<CollegeStudent>getGradeBook(){
         Iterable<CollegeStudent>collegeStudents=studentDao.findAll();
         return collegeStudents;
 
