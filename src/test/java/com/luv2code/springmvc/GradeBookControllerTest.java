@@ -2,19 +2,22 @@ package com.luv2code.springmvc;
 
 import com.luv2code.springmvc.models.CollegeStudent;
 import com.luv2code.springmvc.models.GradebookCollegeStudent;
+import com.luv2code.springmvc.repository.StudentDao;
 import com.luv2code.springmvc.service.StudentAndGradeService;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.ModelAndViewAssert;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MockMvcBuilder;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.web.servlet.ModelAndView;
@@ -33,15 +36,29 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 public class GradeBookControllerTest {
 
+    private static MockHttpServletRequest request;
+
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private StudentDao studentDao;
+
 
     //inject the mock mvc
     @Autowired
     private MockMvc mockMvc;
 
     @Mock
-    private StudentAndGradeService studentService;
+    private StudentAndGradeService studentCreateServiceMock;
+
+    @BeforeAll
+    public static void setup() {
+        request = new MockHttpServletRequest();
+        request.setParameter("firstname", "ahmed");
+        request.setParameter("lastname", "omar");
+        request.setParameter("emailAddress", "ahmedomar1997.aoo@gmail.com");
+    }
 
     @BeforeEach
     public void beforeEach() {
@@ -60,19 +77,58 @@ public class GradeBookControllerTest {
 
         List<CollegeStudent> collegeStudentList = new ArrayList<>(Arrays.asList(studentOne, studentTwo));
         // define expectation
-        when(studentService.getGradeBook()).thenReturn(collegeStudentList);
+        when(studentCreateServiceMock.getGradeBook()).thenReturn(collegeStudentList);
         //assert result
-        assertIterableEquals(collegeStudentList, studentService.getGradeBook());
+        assertIterableEquals(collegeStudentList, studentCreateServiceMock.getGradeBook());
 
         //perform web request expectation for status ok
-        MvcResult mvcResult=mockMvc.perform(MockMvcRequestBuilders.get("/")).
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/")).
                 andExpect(status().isOk()).andReturn();
 
-        ModelAndView mav=mvcResult.getModelAndView();
+        ModelAndView mav = mvcResult.getModelAndView();
 
-        ModelAndViewAssert.assertViewName(mav,"index");
+        ModelAndViewAssert.assertViewName(mav, "index");
 
     }
+
+
+    @Test
+    //perform we request http
+    public void createStudentsHttpRequest() throws Exception {
+
+        CollegeStudent studentOne = new CollegeStudent("osama", "mohamed",
+                "ahmedomar1999.aoo@gmail.com");
+
+        List<CollegeStudent> collegeStudentList = new ArrayList<>(Arrays.asList(studentOne, studentOne));
+
+        when(studentCreateServiceMock.getGradeBook()).thenReturn(collegeStudentList);
+
+        assertIterableEquals(collegeStudentList, studentCreateServiceMock.getGradeBook());
+
+        MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.post("/")
+                .contentType(MediaType.APPLICATION_JSON)
+                .param("firstname", request.getParameterValues("firstname"))
+                .param("lastname", request.getParameterValues("lastname"))
+                .param("emailAddress", request.getParameterValues("emailAddress")))
+                .andExpect(status().isOk()).andReturn();
+
+        ModelAndView mav = mvcResult.getModelAndView();
+
+        ModelAndViewAssert.assertViewName(mav, "index");
+
+        CollegeStudent verifyStudent=studentDao.findByEmailAddress("ahmedomar1997.aoo@gmail.com");
+
+        assertNotNull(verifyStudent,"Student should be found");
+    }
+
+    @Test
+    public void deleteStudentHttpRequest()throws Exception{
+
+        assertTrue(studentDao.findById(1).isPresent());
+
+
+    }
+
 
     @AfterEach
     public void setupAfterTransaction() {
