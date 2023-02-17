@@ -2,6 +2,10 @@ package com.luv2code.springmvc;
 
 import com.luv2code.springmvc.models.CollegeStudent;
 import com.luv2code.springmvc.models.GradebookCollegeStudent;
+import com.luv2code.springmvc.models.MathGrade;
+import com.luv2code.springmvc.models.ScienceGrade;
+import com.luv2code.springmvc.repository.MathGradesDao;
+import com.luv2code.springmvc.repository.ScienceGradeDao;
 import com.luv2code.springmvc.repository.StudentDao;
 import com.luv2code.springmvc.service.StudentAndGradeService;
 import org.junit.jupiter.api.AfterEach;
@@ -43,6 +47,15 @@ public class GradeBookControllerTest {
 
     @Autowired
     private StudentDao studentDao;
+
+    @Autowired
+    private MathGradesDao mathGradesDao;
+
+    @Autowired
+    private StudentAndGradeService studentService;
+
+    @Autowired
+    private ScienceGradeDao scienceGradeDao;
 
 
     //inject the mock mvc
@@ -151,6 +164,21 @@ public class GradeBookControllerTest {
 
         assertFalse(studentDao.findById(1).isPresent());
 
+    }
+    @Test
+    public void createGradeService(){
+        //create grade
+        assertTrue(studentService.createGrade(80.50,1,"math"));
+        assertTrue(studentService.createGrade(80.50,1,"science"));
+
+
+        //get all grades with studentId
+        Iterable<MathGrade> mathGrades = mathGradesDao.findGradeByStudentId(1);
+        Iterable<ScienceGrade> scienceGrade = scienceGradeDao.findGradeByStudentId(1);
+
+        //verify there is grades
+        assertTrue(mathGrades.iterator().hasNext(),"student has math grades");
+        assertTrue(scienceGrade.iterator().hasNext(),"student has science grades");
     }
 
 
